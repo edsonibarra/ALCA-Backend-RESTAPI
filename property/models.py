@@ -54,6 +54,17 @@ class HouseForSale(models.Model):
     owner = models.ForeignKey(Owner, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
+    estatus = models.CharField(max_length=120, null=True, blank=True)
+    cochera = models.IntegerField(null=True, blank=True)
+    baths = models.FloatField(null=True, blank=True)
+    patio = models.BooleanField(null=True, blank=True)
+    beds = models.IntegerField(null=True, blank=True)
+    minisplits = models.IntegerField(null=True, blank=True)
+    construccion = models.FloatField(null=True, blank=True)
+    superficie = models.FloatField(null=True, blank=True)
+    servicios = models.CharField(max_length=120, null=True, blank=True)
+    metodo_de_pago = models.CharField(max_length=120, null=True, blank=True)
+    negociable = models.BooleanField(null=True, blank=True)
 
 
     @property

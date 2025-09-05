@@ -4,6 +4,7 @@ from rest_framework.routers import DefaultRouter
 from django.conf import settings
 from api.views import CreateUserView, me
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from owner.views import OwnerViewSet
 from property import views
 from django.conf.urls.static import static
 
@@ -11,6 +12,7 @@ from django.conf.urls.static import static
 
 router = DefaultRouter()
 router.register(r'houses-for-sale', views.HouseForSaleViewSet)
+router.register(r'owners', OwnerViewSet)
 # router.register(r'houses-for-rent', views.HouseForRentViewSet)
 
 urlpatterns = [

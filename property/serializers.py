@@ -56,3 +56,12 @@ class HouseForSaleSerializer(serializers.ModelSerializer):
     class Meta:
         model = HouseForSale
         fields = '__all__'
+
+
+class HouseForRentSerializer(serializers.ModelSerializer):
+    images = PropertyImageSerializer(many=True, read_only=True)
+    main_image = PropertyImageSerializer(read_only=True)
+
+    class Meta:
+        model = HouseForRent
+        fields = '__all__'

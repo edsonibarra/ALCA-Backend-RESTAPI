@@ -12,8 +12,8 @@ from django.conf.urls.static import static
 
 router = DefaultRouter()
 router.register(r'houses-for-sale', views.HouseForSaleViewSet)
+router.register(r'houses-for-rent', views.HouseForRentViewSet)
 router.register(r'owners', OwnerViewSet)
-# router.register(r'houses-for-rent', views.HouseForRentViewSet)
 
 urlpatterns = [
     path("admin/", admin.site.urls),

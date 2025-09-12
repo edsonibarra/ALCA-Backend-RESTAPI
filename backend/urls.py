@@ -13,6 +13,7 @@ from django.conf.urls.static import static
 router = DefaultRouter()
 router.register(r'houses-for-sale', views.HouseForSaleViewSet)
 router.register(r'houses-for-rent', views.HouseForRentViewSet)
+router.register(r'property-images', views.PropertyImageViewSet)
 router.register(r'owners', OwnerViewSet)
 
 urlpatterns = [
@@ -25,5 +26,5 @@ urlpatterns = [
     path('api/', include(router.urls)),
 ]
 
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# Note: Static media URLs are not needed since we're using private S3 storage
+# Images are served through secure presigned URLs

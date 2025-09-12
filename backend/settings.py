@@ -15,12 +15,12 @@ import environ
 import os
 
 
-env = environ.Env()
-environ.Env.read_env()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+env = environ.Env()
+environ.Env.read_env(os.path.join(BASE_DIR, "backend", ".env"))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -70,7 +70,30 @@ INSTALLED_APPS = [
     'api',
     'property',
     'owner',
+    'storages'
 ]
+
+
+AWS_ACCESS_KEY_ID = env("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = env("AWS_SECRET_ACCESS_KEY")
+AWS_STORAGE_BUCKET_NAME = env("AWS_STORAGE_BUCKET_NAME")
+AWS_S3_REGION_NAME = env("AWS_S3_REGION_NAME", default="us-east-1")
+
+# S3 Configuration for private files
+AWS_DEFAULT_ACL = 'private'
+AWS_S3_OBJECT_PARAMETERS = {
+    'CacheControl': 'max-age=86400',
+}
+AWS_S3_FILE_OVERWRITE = False
+AWS_QUERYSTRING_AUTH = True
+AWS_QUERYSTRING_EXPIRE = 3600  # 1 hour
+
+# Use custom private storage backend
+DEFAULT_FILE_STORAGE = "backend.storage_backends.PrivateMediaStorage"
+
+# For private files, we don't use a public MEDIA_URL
+# Instead, we'll generate presigned URLs when needed
+MEDIA_URL = None
 
 MIDDLEWARE = [
 'corsheaders.middleware.CorsMiddleware',
@@ -107,12 +130,12 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
+}
 
 # DATABASES = {
 #     "default": {
@@ -125,9 +148,9 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 #     }
 # }
 
-DATABASES = {
-    "default": env.db("DATABASE_URL")
-}
+# DATABASES = {
+#     "default": env.db("DATABASE_URL")
+# }
 
 
 # Password validation
@@ -177,8 +200,8 @@ CORS_ALLOW_ALL_ORIGINS = True
 
 
 # Configuración para archivos multimedia
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+# MEDIA_URL = '/media/'
+# MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Opcional: configurar tamaños máximos
 FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB

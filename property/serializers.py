@@ -34,17 +34,27 @@ class PropertyImageUploadSerializer(serializers.ModelSerializer):
 
 class PropertyImageSerializer(serializers.ModelSerializer):
     image_url = serializers.SerializerMethodField()
+    secure_url = serializers.SerializerMethodField()
 
     class Meta:
         model = PropertyImage
-        fields = ['id', 'image', 'image_url', 'caption', 'is_main', 'order', 'created_at']
+        fields = ['id', 'image', 'image_url', 'secure_url', 'caption', 'is_main', 'order', 'created_at']
 
     def get_image_url(self, obj):
+        """
+        Deprecated: Use secure_url instead.
+        This field is kept for backward compatibility.
+        """
+        return self.get_secure_url(obj)
+
+    def get_secure_url(self, obj):
+        """
+        Generate a secure presigned URL for the image
+        """
         if obj.image:
-            request = self.context.get('request')
-            if request:
-                return request.build_absolute_uri(obj.image.url)
-            return obj.image.url
+            # Get expiration time from context or use default (1 hour)
+            expiration = self.context.get('url_expiration', 3600)
+            return obj.get_secure_url(expiration)
         return None
 
 

@@ -2,10 +2,12 @@ from rest_framework import status, viewsets, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+from rest_framework.permissions import IsAuthenticated
 from django.contrib.contenttypes.models import ContentType
 from django_filters.rest_framework import DjangoFilterBackend
 from django_filters import rest_framework as django_filters
 from django.db.models import Q
+from django.http import HttpResponseRedirect, Http404
 
 from .models import HouseForSale, HouseForRent, PropertyImage
 from .serializers import PropertyImageUploadSerializer, PropertyImageSerializer, HouseForSaleSerializer, HouseForRentSerializer
@@ -244,7 +246,7 @@ class HouseForRentViewSet(viewsets.ModelViewSet):
     
     # Search fields
     search_fields = [
-        'title', 'street', 'nghood', 'city', 'comments', 
+        'title', 'street', 'nghood', 'city', 'comments',
         'included_services'
     ]
     
@@ -268,6 +270,42 @@ class HouseForRentViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(owner__id=owner_id)
         return queryset
 
+    @action(detail=True, methods=['post'], parser_classes=[MultiPartParser, FormParser])
+    def upload_images(self, request, pk=None):
+        """
+        Upload multiple images to a HouseForRent
+        Endpoint: POST /houses-for-rent/{id}/upload_images/
+        """
+        house = self.get_object()
+        files = request.FILES.getlist("images")  # multiple files
+
+        if not files:
+            return Response({"error": "No images provided"}, status=status.HTTP_400_BAD_REQUEST)
+
+        created_images = []
+        content_type = ContentType.objects.get_for_model(HouseForRent)
+
+        for img_file in files:
+            serializer = PropertyImageUploadSerializer(
+                data={
+                    "image": img_file,
+                    "content_type": "house_for_rent",
+                    "object_id": house.id,
+                    "is_main": request.data.get("is_main", False),
+                    "caption": request.data.get("caption", ""),
+                    "order": request.data.get("order", 0),
+                },
+                context={"request": request},
+            )
+            serializer.is_valid(raise_exception=True)
+            image = serializer.save()
+            created_images.append(image)
+
+        return Response(
+            PropertyImageSerializer(created_images, many=True, context={"request": request}).data,
+            status=status.HTTP_201_CREATED
+        )
+
     @action(detail=False, methods=['get'])
     def search_by_location(self, request):
         """
@@ -288,6 +326,146 @@ class HouseForRentViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(postal_code=postal_code)
             
         serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+
+class PropertyImageViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing PropertyImage objects with secure access
+    """
+    queryset = PropertyImage.objects.all()
+    serializer_class = PropertyImageSerializer
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+
+    def get_queryset(self):
+        """
+        Filter images based on content_type and object_id if provided
+        """
+        queryset = PropertyImage.objects.all()
+        content_type = self.request.query_params.get('content_type', None)
+        object_id = self.request.query_params.get('object_id', None)
+        
+        if content_type and object_id:
+            # Map content type strings to models
+            model_mapping = {
+                'house_for_sale': HouseForSale,
+                'house_for_rent': HouseForRent,
+            }
+            
+            if content_type in model_mapping:
+                model_class = model_mapping[content_type]
+                ct = ContentType.objects.get_for_model(model_class)
+                queryset = queryset.filter(content_type=ct, object_id=object_id)
+        
+        return queryset.order_by('order', 'created_at')
+
+    @action(detail=True, methods=['get'])
+    def secure_url(self, request, pk=None):
+        """
+        Generate a secure presigned URL for an image
+        Endpoint: GET /property-images/{id}/secure_url/
+        """
+        try:
+            image = self.get_object()
+            expiration = int(request.query_params.get('expiration', 3600))  # Default 1 hour
+            
+            secure_url = image.get_secure_url(expiration)
+            if secure_url:
+                return Response({
+                    'secure_url': secure_url,
+                    'expires_in': expiration,
+                    'image_id': image.id
+                })
+            else:
+                return Response(
+                    {'error': 'Could not generate secure URL'},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+        except PropertyImage.DoesNotExist:
+            raise Http404("Image not found")
+
+    @action(detail=True, methods=['get'])
+    def redirect_to_image(self, request, pk=None):
+        """
+        Redirect to the secure image URL
+        Endpoint: GET /property-images/{id}/redirect_to_image/
+        """
+        try:
+            image = self.get_object()
+            expiration = int(request.query_params.get('expiration', 3600))  # Default 1 hour
+            
+            secure_url = image.get_secure_url(expiration)
+            if secure_url:
+                return HttpResponseRedirect(secure_url)
+            else:
+                return Response(
+                    {'error': 'Could not generate secure URL'},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+        except PropertyImage.DoesNotExist:
+            raise Http404("Image not found")
+
+    @action(detail=False, methods=['post'], parser_classes=[MultiPartParser, FormParser])
+    def bulk_upload(self, request):
+        """
+        Upload multiple images at once
+        Endpoint: POST /property-images/bulk_upload/
+        """
+        files = request.FILES.getlist("images")
+        content_type = request.data.get("content_type")
+        object_id = request.data.get("object_id")
+
+        if not files:
+            return Response({"error": "No images provided"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if not content_type or not object_id:
+            return Response(
+                {"error": "content_type and object_id are required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        created_images = []
+        for img_file in files:
+            serializer = PropertyImageUploadSerializer(
+                data={
+                    "image": img_file,
+                    "content_type": content_type,
+                    "object_id": object_id,
+                    "is_main": request.data.get("is_main", False),
+                    "caption": request.data.get("caption", ""),
+                    "order": request.data.get("order", 0),
+                },
+                context={"request": request},
+            )
+            serializer.is_valid(raise_exception=True)
+            image = serializer.save()
+            created_images.append(image)
+
+        return Response(
+            PropertyImageSerializer(created_images, many=True, context={"request": request}).data,
+            status=status.HTTP_201_CREATED
+        )
+
+    @action(detail=True, methods=['patch'])
+    def set_as_main(self, request, pk=None):
+        """
+        Set this image as the main image for its property
+        Endpoint: PATCH /property-images/{id}/set_as_main/
+        """
+        image = self.get_object()
+        
+        # Remove main flag from other images of the same property
+        PropertyImage.objects.filter(
+            content_type=image.content_type,
+            object_id=image.object_id
+        ).update(is_main=False)
+        
+        # Set this image as main
+        image.is_main = True
+        image.save()
+        
+        serializer = self.get_serializer(image)
         return Response(serializer.data)
 
     @action(detail=False, methods=['get'])

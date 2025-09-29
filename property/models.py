@@ -25,6 +25,10 @@ def property_image_upload_path(instance, filename):
     return f'properties/{model_name}/{object_id}/{new_filename}'
 
 
+
+class BasePropertyModel(models.Model):
+    pass
+
 class PropertyImage(models.Model):
     """Modelo genérico para manejar imágenes de cualquier tipo de propiedad"""
     image = models.ImageField(

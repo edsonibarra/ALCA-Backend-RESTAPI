@@ -3,10 +3,45 @@ from django.db import models
 from django.contrib.contenttypes.models import ContentType
 from owner.models import Owner
 from backend.storage_backends import PrivateMediaStorage
+from . import property_constants
+from . import property_choices
 
+class BaseProperty(models.Model):
 
-class Property(models.Model):
-    pass
+    # Common fields for all the properties
+    tipo_propiedad = models.CharField(choices=property_choices.PROPERTY_TYPE, null=True, blank=True)
+    titulo = models.CharField(max_length=property_constants.MAX_LENGTH_PROPERTY_TITLE, null=True, blank=True)
+    calle = models.CharField(max_length=property_constants.MAX_LENGTH_ADDRESS_STREET, null=True, blank=True)
+    colonia = models.CharField(max_length=property_constants.MAX_LENGTH_ADDRESS_NEIGHBORHOOD, null=True, blank=True)
+    numero = models.IntegerField(null=True, blank=True)
+    codigo_postal = models.IntegerField(null=True, blank=True)
+    ciudad = models.CharField(choices=property_choices.CITY_CHOICES, null=True, blank=True)
+    operacion = models.CharField(property_choices.OPERATION_CHOICES, null=True, blank=True)
+    costo = models.IntegerField(null=True, blank=True)
+    propietario = models.ForeignKey(Owner, on_delete=models.CASCADE, null=True, blank=True)
+    estatus = models.CharField(choices=property_choices.STATUS_CHOICES, null=True, blank=True)
+    caracteristicas_extras = models.TextField(null=True, blank=True)
+    comentarios = models.TextField(null=True, blank=True)
+
+    # Fields specific for apartments in rent
+    tiene_cochera = models.BooleanField(null=True, blank=True)
+    banos = models.FloatField(null=True, blank=True)
+    acepta_mascotas = models.BooleanField(null=True, blank=True)
+    tiene_patio = models.BooleanField(null=True, blank=True)
+    recamaras = models.IntegerField(null=True, blank=True)
+    centro_de_lavado = models.BooleanField(null=True, blank=True)
+    minisplits = models.IntegerField(null=True, blank=True)
+    servicios_incluidos = models.CharField(null=True, blank=True)
+    numero_servicio_simas = models.CharField(null=True, blank=True)
+    numero_servicio_cfe = models.CharField(null=True, blank=True)
+
+    # Fields specific for house in sale
+    superficie_terreno = models.IntegerField(null=True, blank=True)
+    superficie_construccion = models.IntegerField(null=True, blank=True)
+    metodo_pago = models.CharField(choices=property_choices.PAYMENT_METHOD, null=True, blank=True)
+    observaciones = models.TextField(null=True, blank=True)
+    negociable = models.BooleanField(null=True, blank=True)
+
 
 
 def property_image_upload_path(instance, filename):

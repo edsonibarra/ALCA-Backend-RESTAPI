@@ -5,6 +5,10 @@ from owner.models import Owner
 from backend.storage_backends import PrivateMediaStorage
 
 
+class Property(models.Model):
+    pass
+
+
 def property_image_upload_path(instance, filename):
     """Función para definir la ruta de subida de imágenes"""
     import uuid

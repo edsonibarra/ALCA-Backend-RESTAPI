@@ -1,7 +1,7 @@
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.db import models
 from django.contrib.contenttypes.models import ContentType
-from owner.models import Owner
+from owner.models import BaseOwner, Owner
 from backend.storage_backends import PrivateMediaStorage
 from . import property_constants
 from . import property_choices
@@ -13,12 +13,12 @@ class BaseProperty(models.Model):
     titulo = models.CharField(max_length=property_constants.MAX_LENGTH_PROPERTY_TITLE, null=True, blank=True)
     calle = models.CharField(max_length=property_constants.MAX_LENGTH_ADDRESS_STREET, null=True, blank=True)
     colonia = models.CharField(max_length=property_constants.MAX_LENGTH_ADDRESS_NEIGHBORHOOD, null=True, blank=True)
-    numero = models.IntegerField(null=True, blank=True)
+    numero = models.CharField(max_length=20, null=True, blank=True)
     codigo_postal = models.IntegerField(null=True, blank=True)
     ciudad = models.CharField(choices=property_choices.CITY_CHOICES, null=True, blank=True)
     operacion = models.CharField(property_choices.OPERATION_CHOICES, null=True, blank=True)
     costo = models.IntegerField(null=True, blank=True)
-    propietario = models.ForeignKey(Owner, on_delete=models.CASCADE, null=True, blank=True)
+    propietario = models.ForeignKey(BaseOwner, on_delete=models.CASCADE, null=True, blank=True)
     estatus = models.CharField(choices=property_choices.STATUS_CHOICES, null=True, blank=True)
     caracteristicas_extras = models.TextField(null=True, blank=True)
     comentarios = models.TextField(null=True, blank=True)

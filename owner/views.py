@@ -17,6 +17,6 @@ class OwnerPagination(PageNumberPagination):
 
 
 class OwnerViewSet(viewsets.ModelViewSet):
-    queryset = BaseOwner.objects.all().order_by("name")
+    queryset = BaseOwner.objects.all().order_by("nombre")
     serializer_class = OwnerSerializer
     pagination_class = OwnerPagination

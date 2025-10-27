@@ -168,3 +168,9 @@ class HouseForRentSerializer(serializers.ModelSerializer):
     class Meta:
         model = HouseForRent
         fields = '__all__'
+
+
+class BasePropertySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BaseProperty
+        fields = "__all__"

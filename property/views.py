@@ -9,8 +9,8 @@ from django_filters import rest_framework as django_filters
 from django.db.models import Q
 from django.http import HttpResponseRedirect, Http404
 
-from .models import HouseForSale, HouseForRent, PropertyImage
-from .serializers import PropertyImageUploadSerializer, PropertyImageSerializer, HouseForSaleSerializer, HouseForRentSerializer
+from .models import BaseProperty, HouseForSale, HouseForRent, PropertyImage
+from .serializers import BasePropertySerializer, PropertyImageUploadSerializer, PropertyImageSerializer, HouseForSaleSerializer, HouseForRentSerializer
 
 
 class HouseForSaleFilter(django_filters.FilterSet):
@@ -486,3 +486,8 @@ class PropertyImageViewSet(viewsets.ModelViewSet):
             
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
+
+class BasePropertyViewSet(viewsets.ModelViewSet):
+    queryset = BaseProperty.objects.all()
+    serializer_class = BasePropertySerializer
+    permission_classes = [IsAuthenticated]
